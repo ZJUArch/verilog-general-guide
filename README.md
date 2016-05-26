@@ -1,0 +1,257 @@
+# Verilog General Guide
+
+This document aims to provide general guide to writing Verilog HDL. _Basic_ section focus on grammar with common fallacies and pitfalls, while _Advance_ section focus on style and common patterns.
+
+## Basic
+
+### What Verilog is and is not?
+
+We (students) use Verilog HDL to program FPGA. But it is necessary to know that Verilog is used in many other ways. Some tips are:
+
+- It is hardware **Description** Language (HDL). So you'd better know what hardware module (deep into circuit) you want to build before writing Verilog code.
+- It aims to replace schematic hardware description.
+- It is heavily used on simulation and behavior verification.
+- It is **NOT** C programming language. Do not think of software development when you are writing Verilog.
+- It is **NOT** completely synthesizable (only part of it).
+
+### Verilog grammar quick walk through
+
+Attention: This chapter only contains Verilog grammar that is frequently used. Most "advanced grammar" is omitted.
+
+Pay great attention to those **bold words**. It indicates place where mistakes usually happen.
+
+#### Module
+
+A module is like a class in object oriented language. A simple module descripting a counter is like:
+
+```verilog
+module counter(
+    input clk,
+    input reset,
+    output [31:0] cnt
+);
+
+    reg [31:0] cnt_reg;
+
+    always @(posedge clk) begin
+        if (reset) begin
+            cnt_reg <= 32'b0;
+        end else begin
+            cnt_reg <= cnt_reg + 1'b1;
+        end
+    end
+
+    assign cnt = cnt_reg;
+
+endmodule
+```
+
+The type of a module port can be `input`, `output` or `inout` (rarely used, but couldn't be avoided in some cases).
+
+Using a module is like instantiate a class:
+
+```verilog
+module top(
+    input clk,
+    input reset
+);
+    wire [31:0] cnt;
+
+    counter counter(
+        .clk(clk),
+        .reset(reset),
+        .cnt(cnt)
+    );
+
+endmodule
+```
+
+#### Variable
+    
+`wire` and `reg` are two types that most commonly used.
+
+- `wire`: Physically a wire. Can not "hold" value. Must be continuously assigned.
+- `reg`: **Not necessarily** a register. Can "hold" value. Can be conditionaly assigned.
+
+#### Assignment
+
+`assign` keyword is used when assigning a wire (outside of always block). The value is continuous assigned to the wire. It makes sense because a physical wire always has a value (either high or low).
+
+`=` (block assignment) and `<=` (non-block assignment) operators are used when assign a reg.
+
+- block assignment:
+    - evaluated and assgined in a single step.
+    - execution flow within the procedure is blocked until the assignment is blocked.
+    - usually used in combinational always block (Xilinx suggests never use block assignment in sequential logic even you can use them technically and the code sucessfully synthesizes)
+
+Block assignment example:
+
+```verilog
+module foo_logic(
+    input clk,
+    input a,
+    input b,
+    input c,
+    input sh
+);
+    reg data;
+
+    // Though this varables is "reg" type, it is physically a wire.
+    // We type it as "reg" so that we can use it in an always block with "if" and "else" condition
+    reg data_in;
+
+    always @* begin
+        // provide default value
+        data_in = 1'b0;
+        if (a & ~sh) begin
+            data_in = 1'b1;
+        end else begin
+            if (~data & (c & sh))
+                data_in = 1'b1;
+            else if (data & (b & sh))
+                data_in = 1'b1;
+        end
+    end
+
+    always @(posedge clk) begin
+        data <= data_in;
+    end
+
+endmodule
+```
+
+The diagram is:
+
+![foo_logic](img/foo_logic.png)
+
+The module can be writen without combinational always block as:
+
+```verilog
+module foo_logic(
+    input clk,
+    input a,
+    input b,
+    input c,
+    input sh
+);
+    // This is the only real register
+    reg data;
+
+    wire q = data;
+    wire notq = ~data;
+
+    wire anda;
+    wire andb;
+    wire andc;
+    wire andq;
+    wire andqbar;
+    wire orq;
+    wire data_in;
+
+    assign andc = c & sh;
+    assign andb = b & sh;
+    assign anda = a & ~sh;
+
+    assign andq = andb & q;
+    assign andqbar = andc & notq;
+
+    assign orq = andq | andqbar;
+
+    assign data_in = orq | anda;
+
+    always @(posedge clk) begin
+        data <= data_in;
+    end
+
+endmodule
+```
+
+- Non-block assignment: happens parallel
+    - evaluated and assigned in two steps:
+        1. The right The right-hand side is evaluated immediately hand side is evaluated immediately.
+        1. The assignment to the left-hand side is postponed until other evaluations in the current time step are completed.
+
+Non-block assignment example (swap value):
+
+```verilog
+module flop(
+    input clk,
+    input reset
+);
+    reg flop1;
+    reg flop2;
+
+    always @(posedge clk) begin
+        if (reset) begin
+            flop1 <= 1'b0;
+            flop2 <= 1'b1;
+        end else begin
+            flop1 <= flop2;
+            flop2 <= flop1;
+        end
+    end
+
+endmodule
+```
+
+**Tip:** Always use block assignment in combinational logic (`always @*`), and non-block assignment in sequential logic (`always @(posedge clk)`).
+
+#### Operator
+
+- Logical: `!` `&&` `||` `==` `!=`
+- Bitwise: `~` `&` `|` `^`
+- Reduction: `&` `~&` `|` `~|` `^`
+- Shift: `<<` `>>`
+- Concatenation: `{}`
+- Replication: `{{}}`
+- Arithmetic: `+` `-` `*`
+- Division: `/` **(Support only if second operand is a power of 2 or Both operands are constant)**
+- Modulus: `%` **(Support only if second operand is a power of 2)**
+- Power: `**` **(Support if both operands are constants or first operand is 2)**
+
+#### Conditional branch
+
+- Wire assignment: `assign aWire = (a == b) ? 1: 0;`
+- Always block: `if … else …`
+    - Yes, `if` and `else` statement is only available inside always block.
+    - If you want to use it to assign a wire, declare that wire as reg and use it inside a `always @*` block.
+
+#### Always block
+
+- When a signal in sensitive list changes, the block content will be execute
+- Two common usage:
+    - `always @*`: for combination logic
+        - `*` equals to all the right hand variables inside that block or-ed together
+    - `always @(posedge clk)`: for sequential logic
+
+Tip: It is preferable to use synchronize reset to maintain small time delay. For example:
+
+```verilog
+always @(posedge clk) begin
+    if (reset) begin
+        // do initialization and/or reset
+    end
+end
+```
+
+Instead of:
+
+```verilog
+always @(posedge clk or negedge reset) begin
+    if (!reset) begin
+        // do initialization and/or reset
+    end
+end
+```
+
+#### Parameter & local parameter
+
+- parameter: can be reassigned when initialization
+- localparam: local usage. Can't be reassigned
+- Great tool for generic design
+
+#### "Advance" grammar (you can live perfectly without them, so don’t panic)
+
+- function
+- task
+- generator
