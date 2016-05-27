@@ -224,7 +224,7 @@ endmodule
         - `*` equals to all the right hand variables inside that block or-ed together
     - `always @(posedge clk)`: for sequential logic
 
-Tip: It is preferable to use synchronize reset to maintain small time delay. For example:
+**Tip:** It is preferable to use synchronize reset to maintain small time delay. For example:
 
 ```verilog
 always @(posedge clk) begin
@@ -284,6 +284,12 @@ mux2to1 #(.WIDTH(8)) mux2to1_16bit (.a(a), .b(b), .sel(sel), .o(o));
 
 #### "Advance" grammar (you can live perfectly without them, so don’t panic)
 
+`function` and `task` are pretty much like `function` and `procedure` in Pascal. A function returns value while task doesn't.
+
+`generator` is the template which generate code before sythesizing.
+
 - function
 - task
 - generator
+
+Won't say too much about them because we are in _Basic_ section. But they are powerful and convenient when you get familiar with them. You may refer to other resource if you want to learn.
