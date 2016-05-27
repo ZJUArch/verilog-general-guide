@@ -423,3 +423,7 @@ module uart_receiver(
 endmodule
 ```
 
+## Reference
+
+1. Xilinx XST User Guide for Virtex-6, Spartan-6, and 7 Series Devices
+2. Verilog HDL Coding by freescale semiconductor
