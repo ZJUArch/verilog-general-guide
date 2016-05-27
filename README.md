@@ -315,9 +315,106 @@ Won't say too much about them because we are in _Basic_ section. But they are po
 
 ### Pattern
 
-1. Finite state machine
+#### Finite state machine
 
+Finite state machine (a.k.a. FSM) is the most important conception in hardware programming. You will use FSM a lot when you are trying to adapt hardware protocols.
 
-1. Moore machine
-2. Mealy machine
+There are two types of FSM:
+
+1. Moore machine: the next state is decided by current state.
+2. Mealy machine: the next state is decided by current state along with input.
+
+Refer to text book or wiki if you don't understant.
+
+There exist a pattern to describe FSMs. The idea is to divide "next state" decision apart from "current state" action.
+
+For example, consider the UART protocol:
+
+![uart_protocol](img/uart_protocol.png)
+
+Since we are just introducing the FSM pattern, we ignore the clock synchronization and over-sampling logic (if you don't know, look it up). Assume that we managed to be triggered at sampling points just as the picture implies, we can model this protocol with `IDLE`, `RECEIVING`, `STOP` three state. The receiving module code could be:
+
+```verilog
+module uart_receiver(
+    input clk,
+    input reset,
+    input rx,
+    output ready,
+    output [7:0] data
+);
+
+    localparam
+        IDLE = 0,
+        RECEIVING = 1,
+        STOP = 2;
+
+    reg [7:0] shift_reg;
+    reg ready_reg;
+
+    reg [1:0] state;
+    reg [1:0] state_next;
+
+    reg [2:0] cnt;
+    reg [2:0] cnt_next;
+
+    // combinational logic only concerns what the next state is
+    always @* begin
+        // next state is default to current state
+        state_next = state;
+        cnt_next = cnt;
+        case (state)
+            IDLE: begin
+                if (rx == 1'b0) begin
+                    state_next = RECEIVING;
+                    cnt_next = 3'b000;
+                end
+            end
+            RECEIVING: begin
+                if (cnt == 3'b111) begin
+                    state_next = STOP;
+                    cnt_next = 3'b000;
+                end else begin
+                    cnt_next = cnt + 1'b1;
+                end
+            end
+            STOP: begin
+                // stop bit must be a "1", otherwise indicates an error
+                // we assume errors never happen
+                state_next = IDLE;
+            end
+        endcase
+    end
+
+    // sequential logic concerns what to do in current state
+    always @(posedge clk) begin
+        if (reset) begin
+            cnt <= 3'b000;
+            state <= IDLE;
+            shift_reg <= 8'b0;
+            ready_reg <= 1'b0;
+        end else begin
+            // transfer state
+            cnt <= cnt_next;
+            state <= state_next;
+
+            case(state)
+                IDLE: begin
+                    shift_reg <= 8'b0;
+                    ready_reg <= 1'b0;
+                end
+                RECEIVING: begin
+                    shift_reg <= {rx, shift_reg[6:1]};
+                end
+                STOP: begin
+                    ready_reg <= 1'b1;
+                end
+            endcase
+        end
+    end
+
+    assign ready = ready_reg;
+    assign data = shift_reg;
+
+endmodule
+```
 
