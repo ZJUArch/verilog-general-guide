@@ -332,9 +332,14 @@ For example, consider the UART protocol:
 
 ![uart_protocol](img/uart_protocol.png)
 
-Since we are just introducing the FSM pattern, we ignore the clock synchronization and over-sampling logic (if you don't know, look it up). Assume that we managed to be triggered at sampling points just as the picture implies, we can model this protocol with `IDLE`, `RECEIVING`, `STOP` three state. The receiving module code could be:
+Since we are just introducing the FSM pattern, we ignore the clock synchronization and over-sampling logic (if you don't know what it means, look it up). Assume that we managed to be triggered at sampling points just as the picture implies, we can model this protocol with `IDLE`, `RECEIVING`, `STOP` three state. The receiving module code could be:
 
 ```verilog
+/*
+ * Caution! This code is meant to be introducing the FSM pattern.
+ * It won't work if you don't add the clock synchronization and over-sampling logic.
+ * You should write your own uart receiver instead of copying this one.
+ */
 module uart_receiver(
     input clk,
     input reset,
