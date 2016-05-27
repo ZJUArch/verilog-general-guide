@@ -246,9 +246,41 @@ end
 
 #### Parameter & local parameter
 
-- parameter: can be reassigned when initialization
-- localparam: local usage. Can't be reassigned
-- Great tool for generic design
+In Verilog HDL, parameters are constants and do not belong to any other data type such as net or register data types. There are two types of parameters in Verilog, `parameter` and `localparam` (local parameter).
+
+`parameter` can be reassigned when initialization, see example below.
+
+`localparam` is of local usage. Can't be reassigned.
+
+`parameter` is a great tool for generic design, and `localparam` is usually used for state representation. For example:
+
+```verilog
+module mux2to1(
+    input [WIDTH-1:0] a,
+    input [WIDTH-1:0] b,
+    input sel,
+    output [WIDTH-1:0] o
+);
+
+    parameter WIDTH = 32;
+
+    assign o = sel ? b : a;
+
+endmodule
+```
+
+We can thus use the above module to create 32-bit, 16-bit, 8-bit 2 to 1 mux like this:
+
+```verilog
+// default is 32-bit
+mux2to1 mux2to1_32bit (.a(a), .b(b), .sel(sel), .o(o));
+
+// instantiate as 16-bit
+mux2to1 #(.WIDTH(16)) mux2to1_16bit (.a(a), .b(b), .sel(sel), .o(o));
+
+// instantiate as 8-bit
+mux2to1 #(.WIDTH(8)) mux2to1_16bit (.a(a), .b(b), .sel(sel), .o(o));
+```
 
 #### "Advance" grammar (you can live perfectly without them, so don’t panic)
 
