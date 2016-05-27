@@ -293,3 +293,31 @@ mux2to1 #(.WIDTH(8)) mux2to1_16bit (.a(a), .b(b), .sel(sel), .o(o));
 - generator
 
 Won't say too much about them because we are in _Basic_ section. But they are powerful and convenient when you get familiar with them. You may refer to other resource if you want to learn.
+
+## Advance
+
+### Rules
+
+1. Prefer sync to async
+    - Always use `posedge clk` to trigger a sequential always block instead of some random signals.
+    - Reason: Eases clock network synthesis. Eases test strategy generation, and limits exceptions to the coding standards to a small module. It also improves the portability of the code to a different end use clocking scheme.
+1. Prefer explicitly initialize in always block to initial block
+    - Reseting reg value when `reset` signal is high.
+    - Reason: Always maintaining proper reset behavior.
+1. Prefer multiple always blocks to a huge always block
+    - Reason: dividing different logic to make code clear.
+1. Prefer generic design
+    - Using `parameter` to write generic module
+    - Reason: Simplify code. Increase readability.
+1. Prefer semantic naming
+1. Prefer unified coding sytle
+    - Since Verilog coding style is rather complicated and various among different companies. We do not specify a certain style here. But make sure you stick to one through your project.
+
+### Pattern
+
+1. Finite state machine
+
+
+1. Moore machine
+2. Mealy machine
+
