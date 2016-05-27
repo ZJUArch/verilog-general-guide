@@ -324,7 +324,7 @@ There are two types of FSM:
 1. Moore machine: the next state is decided by current state.
 2. Mealy machine: the next state is decided by current state along with input.
 
-Refer to text book or wiki if you don't understant.
+Refer to text book or wiki if you don't understand.
 
 There exist a pattern to describe FSMs. The idea is to divide "next state" decision apart from "current state" action.
 
