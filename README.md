@@ -168,7 +168,7 @@ endmodule
 
 - Non-block assignment: happens parallel
     - evaluated and assigned in two steps:
-        1. The right The right-hand side is evaluated immediately hand side is evaluated immediately.
+        1. The right-hand side is evaluated immediately.
         1. The assignment to the left-hand side is postponed until other evaluations in the current time step are completed.
 
 Non-block assignment example (swap value):
@@ -218,10 +218,10 @@ endmodule
 
 #### Always block
 
-- When a signal in sensitive list changes, the block content will be execute
+- When a signal in sensitive list changes, the block content will be executed.
 - Two common usage:
     - `always @*`: for combination logic
-        - `*` equals to all the right hand variables inside that block or-ed together
+        - `*` equals to all the right hand variables inside that block
     - `always @(posedge clk)`: for sequential logic
 
 **Tip:** It is preferable to use synchronize reset to maintain small time delay. For example:
